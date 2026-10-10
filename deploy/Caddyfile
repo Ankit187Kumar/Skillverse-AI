@@ -1,0 +1,16 @@
+# Caddy obtains and renews HTTPS certificates automatically for {$DOMAIN}.
+# HTTPS is required for camera/microphone access and secure cookies.
+{$DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	# Uploads: documents up to 15 MB, audio up to 10 MB.
+	request_body {
+		max_size 20MB
+	}
+	reverse_proxy frontend:3000
+}
