@@ -1,51 +1,63 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export type AvatarState = "idle" | "speaking" | "thinking" | "listening";
 
 export const INTERVIEWER_NAME = "Ankit";
 
-/** The interviewer's portrait, served from public/avatar. */
+/** The interviewer's portrait and talking clip, served from public/avatar. */
 const PHOTO_SRC = "/avatar/ava.jpg";
-/** Where the mouth sits in the 4:3 frame (percent of width/height). Tune these to match the portrait. */
-const MOUTH_X = 49.5;
-const MOUTH_Y = 64;
+const VIDEO_SRC = "/avatar/Interview_speaking.mp4";
 
-/** Photo avatar: breathes while idle, and the jaw moves in a speech rhythm while speaking. */
+/** Photo avatar: breathes while idle/thinking/listening, switches to a looping talking clip while speaking. */
 export function InterviewerAvatar({ state, className }: { state: AvatarState; className?: string }) {
-  const [wobble, setWobble] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const speaking = state === "speaking";
+
   useEffect(() => {
-    if (state !== "speaking") return;
-    const id = setInterval(() => setWobble(Math.random() < 0.18 ? 0.1 : 0.25 + Math.random() * 0.75), 110);
-    return () => clearInterval(id);
-  }, [state]);
-  const mouth = state === "speaking" ? wobble : 0;
-  const mask = `radial-gradient(ellipse 20% 13% at ${MOUTH_X}% ${MOUTH_Y}%, #000 55%, transparent 100%)`;
-  const img = "absolute inset-0 h-full w-full object-cover object-top";
+    const video = videoRef.current;
+    if (!video) return;
+    if (speaking) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, [speaking]);
+
+  const media = "absolute inset-0 h-full w-full object-cover object-top";
 
   return (
     <div className={cn("relative aspect-[4/3] w-full overflow-hidden bg-[#0B1020]", className)}>
-      <style>{`@keyframes avatar-breathe { 0%,100% { transform: scale(1.02) translateY(0) } 50% { transform: scale(1.035) translateY(-2px) } }`}</style>
+      <style>{`
+        @keyframes avatar-breathe { 0%,100% { transform: scale(1.02) translateY(0) } 50% { transform: scale(1.035) translateY(-2px) } }
+        @keyframes avatar-wave { 0%,100% { height: 25% } 50% { height: 90% } }
+      `}</style>
       <div className="absolute inset-0" style={{ animation: "avatar-breathe 6s ease-in-out infinite", transformOrigin: "50% 80%" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={PHOTO_SRC} alt={`${INTERVIEWER_NAME}, your AI interviewer`} className={img} />
-        {/* Jaw layer: the same photo, feathered around the mouth and nudged down in a speech rhythm. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={PHOTO_SRC}
-          alt=""
+        <img src={PHOTO_SRC} alt={`${INTERVIEWER_NAME}, your AI interviewer`} className={cn(media, "transition-opacity duration-150", speaking ? "opacity-0" : "opacity-100")} />
+        <video
+          ref={videoRef}
+          src={VIDEO_SRC}
+          muted
+          loop
+          playsInline
+          preload="auto"
           aria-hidden
-          className={img}
-          style={{ WebkitMaskImage: mask, maskImage: mask, transform: `translateY(${mouth * 4}px) scaleY(${1 + mouth * 0.03})`, transition: "transform 90ms linear" }}
+          className={cn(media, "transition-opacity duration-150", speaking ? "opacity-100" : "opacity-0")}
         />
       </div>
       {state === "thinking" && <div className="absolute inset-0 bg-black/15" />}
       {state === "speaking" && (
         <div className="absolute bottom-3 right-3 flex h-5 items-end gap-0.5" aria-hidden>
           {[0, 1, 2, 3, 4].map((i) => (
-            <span key={i} className="w-1 rounded-sm bg-white/90 transition-all" style={{ height: `${25 + ((wobble * 100 + i * 37) % 75)}%` }} />
+            <span
+              key={i}
+              className="w-1 rounded-sm bg-white/90"
+              style={{ animation: `avatar-wave ${0.6 + i * 0.07}s ease-in-out infinite`, animationDelay: `${i * 60}ms` }}
+            />
           ))}
         </div>
       )}
