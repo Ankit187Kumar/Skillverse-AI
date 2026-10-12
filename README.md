@@ -1,4 +1,11 @@
 # SkillVerse AI
+SkillVerse AI
+
+Learn. Practice. Evolve.
+
+Live Demo: https://skillverse-ai-psi.vercel.app/
+
+SkillVerse AI is an all-in-one self-development platform: AI mock interviews (text or voice), personalised learning paths, a research agent that cites its sources, a sandboxed coding lab, and progress analytics that tie it all together. It is a responsive web app, so it runs in modern browsers on Android phones and tablets, Windows and macOS.
 
 **Learn. Practice. Evolve.**
 
